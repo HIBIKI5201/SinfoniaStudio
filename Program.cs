@@ -1,4 +1,3 @@
-using Discord.WebSocket;
 using Notion.Client;
 using System.Text;
 using System.Text.Json;
@@ -15,20 +14,28 @@ namespace SinfoniaStudio.Master
         {
             // GitHub Secrets などで渡されたWebhook URLを取得
             string webhookUrl = Environment.GetEnvironmentVariable(DISCORD_WEBHOOK) ?? string.Empty;
-
             if (string.IsNullOrEmpty(webhookUrl))
             {
                 Console.WriteLine("環境変数 DISCORD_WEBHOOK が設定されていません。");
                 return;
             }
 
+            string notionToken = Environment.GetEnvironmentVariable(NOTION_TOKEN) ?? string.Empty;
+            if (string.IsNullOrEmpty(notionToken))
+            {
+                Console.WriteLine("環境変数 NOTION_TOKEN が設定されていません。");
+                return;
+            }
+
+            string databaseID = Environment.GetEnvironmentVariable(NOTION_DATABASE_ID) ?? string.Empty;
+
             NotionClient notion = NotionClientFactory.Create(new ClientOptions
             {
-                AuthToken = Environment.GetEnvironmentVariable(NOTION_TOKEN) ?? string.Empty,
+                AuthToken = notionToken,
             });
 
             var query = await notion.Databases.QueryAsync(
-                Environment.GetEnvironmentVariable(NOTION_DATABASE_ID) ?? string.Empty,
+                databaseID,
                 new DatabasesQueryParameters());
 
             List<IWikiDatabase> database = query.Results;
@@ -85,11 +92,11 @@ namespace SinfoniaStudio.Master
         private static async Task<string> GetAllContentAsync(Page page, NotionClient notion)
         {
             var sb = new StringBuilder();
-            string startCursor = null;
+            string startCursor = string.Empty;
 
             do
             {
-                // ページのブロックを取得（Pagination対応）
+                // ページのブロックを取得。
                 var response = await notion.Blocks.RetrieveChildrenAsync(new BlockRetrieveChildrenRequest
                 {
                     BlockId = page.Id,
