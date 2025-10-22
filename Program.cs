@@ -24,11 +24,11 @@ namespace SinfoniaStudio.Master
 
             NotionClient notion = NotionClientFactory.Create(new ClientOptions
             {
-                AuthToken = Environment.GetEnvironmentVariable(NOTION_TOKEN)
+                AuthToken = Environment.GetEnvironmentVariable(NOTION_TOKEN) ?? string.Empty,
             });
 
             var query = await notion.Databases.QueryAsync(
-                Environment.GetEnvironmentVariable(NOTION_DATABASE_ID),
+                Environment.GetEnvironmentVariable(NOTION_DATABASE_ID) ?? string.Empty,
                 new DatabasesQueryParameters());
 
             StringBuilder sb = new StringBuilder($"GitHub Actionsからのテスト通知です！ {DateTime.Now}");
