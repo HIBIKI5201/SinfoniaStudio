@@ -31,9 +31,17 @@ namespace SinfoniaStudio.Master
                 Environment.GetEnvironmentVariable(NOTION_DATABASE_ID) ?? string.Empty,
                 new DatabasesQueryParameters());
 
+            List<IWikiDatabase> database = query.Results;
+
+            if (database.Count <= 0)
+            {
+                Console.WriteLine("データベースの要素がありません。");
+                return;
+            }
+
             StringBuilder sb = new StringBuilder($"GitHub Actionsからのテスト通知です！ {DateTime.Now}");
 
-            for (int i = 0; i < query.Results.Count; i++)
+            for (int i = 0; i < database.Count; i++)
             {
                 var result = query.Results[i];
 
