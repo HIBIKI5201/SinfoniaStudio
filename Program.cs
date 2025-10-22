@@ -8,7 +8,7 @@ namespace SinfoniaStudio.Master
         static async Task Main()
         {
             // GitHub Secrets などで渡されたWebhook URLを取得
-            string webhookUrl = Environment.GetEnvironmentVariable("DiscordWebhook") ?? string.Empty;
+            string webhookUrl = Environment.GetEnvironmentVariable("DISCORD_WEBHOOK") ?? string.Empty;
 
             if (string.IsNullOrEmpty(webhookUrl))
             {
@@ -32,4 +32,5 @@ namespace SinfoniaStudio.Master
             Console.WriteLine($"送信結果: {response.StatusCode}");
         }
     }
+
 }
