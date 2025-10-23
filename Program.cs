@@ -71,8 +71,15 @@ namespace SinfoniaStudio.Master
                 if (page.Properties.TryGetValue(datePropertyName, out var datePropertyValue) &&
                     datePropertyValue is DatePropertyValue dateProperty)
                 {
-                    DateTime? start = dateProperty.Date?.Start;
-                    DateTime? end = dateProperty.Date?.End;
+                    DateTimeOffset? startOffset = dateProperty.Date?.Start;
+                    DateTimeOffset? endOffset = dateProperty.Date?.End;
+
+                    DateTime? start = startOffset?.UtcDateTime;
+                    DateTime? end = endOffset?.UtcDateTime;
+
+                    // JST補正（UTC+9）
+                    if (start.HasValue) start = start.Value.AddHours(9);
+                    if (end.HasValue) end = end.Value.AddHours(9);
 
                     // JST補正（NotionはUTC基準）
                     if (start.HasValue) start = start.Value.ToUniversalTime().AddHours(9);
