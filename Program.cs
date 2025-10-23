@@ -53,6 +53,7 @@ namespace SinfoniaStudio.Master
             }
 
             DateTime nowTime = DateTime.UtcNow.AddHours(9); //日本時間を取得。
+            DateTime today = nowTime.Date; // 日付を取得。
 
             StringBuilder sb = new StringBuilder($"GitHub Actionsからのテスト通知です！ {nowTime}");
 
@@ -62,6 +63,7 @@ namespace SinfoniaStudio.Master
                 Console.WriteLine("NOTION_DATABASE_DATE_PROPARTYが設定されていません。");
                 return;
             }
+
             for (int i = 0; i < database.Count; i++)
             {
                 IWikiDatabase result = query.Results[i];
@@ -72,24 +74,45 @@ namespace SinfoniaStudio.Master
                     if (page.Properties.TryGetValue(notionDatabaseDateProparty, out PropertyValue? property) &&
                         property is DatePropertyValue dateProperty)
                     {
+                        //予定を取得する。
                         Date date = dateProperty.Date;
+                        DateTime? start = dateProp.Date?.Start;
+                        DateTime? end = dateProp.Date?.End;
 
+                        // JST補正。
+                        if (start.HasValue) start = start.Value.ToUniversalTime().AddHours(9);
+                        if (end.HasValue) end = end.Value.ToUniversalTime().AddHours(9);
+
+                        if (!start.HasValue || !end.HasValue) continue; //どちらも時間が無ければ終了。
+
+                        if (page.Properties.TryGetValue("名前", out var property)) // ← Notion上のタイトル列名
+                        {
+                            if (property is TitlePropertyValue titleProperty)
+                            {
+                                string pageName = string.Join("", titleProperty.Title.Select(t => t.PlainText));
+                                
+                                if ( && start.Value.Date == today)
+                                {
+                                    sb.AppendLine($"\n開始タスク {pageName}");
+                                }
+
+                                if ((end.Value.Date == today))
+                                {
+                                    sb.AppendLine($"\n納期タスク {pageName}");
+                                };
+                            }
+                        }
+
+                        string pageContext = await GetAllContentAsync(page, notion);
+
+                        sb.AppendLine(new string('-', 10));
+                        sb.AppendLine(pageContext);
+                        sb.AppendLine(new string('-', 10));
                     }
-                    else return; //キャストできなかったら終わる。
-
-                    string pageContext = await GetAllContentAsync(page, notion);
-
-                    //パスを生成する。
-                    string pageId = page.Id;
-
-                    string oldContext = string.Empty;
-
-                    sb.AppendLine();
-                    sb.AppendLine(new string('-', 10));
-                    sb.AppendLine(pageContext);
-                    sb.AppendLine(new string('-', 10));
                 }
             }
+
+            return;
 
             using var client = new HttpClient();
 
