@@ -85,9 +85,6 @@ namespace SinfoniaStudio.Master
                     if (start.HasValue) start = start.Value.ToUniversalTime().AddHours(9);
                     if (end.HasValue) end = end.Value.ToUniversalTime().AddHours(9);
 
-                    if (!start.HasValue && !end.HasValue)
-                        continue;
-
                     // ページタイトルを取得
                     string pageName = "(名称未設定)";
                     if (page.Properties.TryGetValue("名前", out var titlePropValue) &&
@@ -97,21 +94,27 @@ namespace SinfoniaStudio.Master
                     }
 
                     // --- 🔥 条件：start または end が今日と一致した場合 ---
+                    bool isToday = false;
                     if (start.HasValue && start.Value.Date == today)
                     {
                         sb.AppendLine($"\n🟢 開始タスク: {pageName}");
+                        isToday = true;
                     }
 
                     if (end.HasValue && end.Value.Date == today)
                     {
                         sb.AppendLine($"\n🔴 納期タスク: {pageName}");
+                        isToday = true;
                     }
+
+                    if (!isToday) continue;
 
                     // ページ本文を取得
                     string pageContext = await GetAllContentAsync(page, notion);
                     sb.AppendLine(new string('-', 10));
                     sb.AppendLine(pageContext);
                     sb.AppendLine(new string('-', 10));
+                    sb.AppendLine();
                 }
             }
 
