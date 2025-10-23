@@ -9,6 +9,7 @@ namespace SinfoniaStudio.Master
         private const string DISCORD_WEBHOOK = "DISCORD_WEBHOOK";
         private const string NOTION_TOKEN = "NOTION_TOKEN";
         private const string NOTION_DATABASE_ID = "NOTION_DATABASE_ID";
+        private const string NOTION_DATABASE_DATE_PROPARTY = "NOTION_DATABASE_DATE_PROPARTY";
 
         static async Task Main()
         {
@@ -28,6 +29,11 @@ namespace SinfoniaStudio.Master
             }
 
             string databaseID = Environment.GetEnvironmentVariable(NOTION_DATABASE_ID) ?? string.Empty;
+            if (string.IsNullOrEmpty(databaseID))
+            {
+                Console.WriteLine("環境変数 NOTION_DATABASE_ID が設定されていません。");
+                return;
+            }
 
             NotionClient notion = NotionClientFactory.Create(new ClientOptions
             {
@@ -46,15 +52,31 @@ namespace SinfoniaStudio.Master
                 return;
             }
 
-            StringBuilder sb = new StringBuilder($"GitHub Actionsからのテスト通知です！ {DateTime.Now}");
+            DateTime nowTime = DateTime.UtcNow.AddHours(9); //日本時間を取得。
 
+            StringBuilder sb = new StringBuilder($"GitHub Actionsからのテスト通知です！ {nowTime}");
+
+            string notionDatabaseDateProparty = Environment.GetEnvironmentVariable(NOTION_DATABASE_DATE_PROPARTY) ?? string.Empty;
+            if (string.IsNullOrEmpty(notionDatabaseDateProparty))
+            {
+                Console.WriteLine("NOTION_DATABASE_DATE_PROPARTYが設定されていません。");
+                return;
+            }
             for (int i = 0; i < database.Count; i++)
             {
-                var result = query.Results[i];
+                IWikiDatabase result = query.Results[i];
 
                 // Page 型にキャスト
                 if (result is Page page)
                 {
+                    if (page.Properties.TryGetValue(notionDatabaseDateProparty, out PropertyValue? property) &&
+                        property is DatePropertyValue dateProperty)
+                    {
+                        Date date = dateProperty.Date;
+
+                    }
+                    else return; //キャストできなかったら終わる。
+
                     string pageContext = await GetAllContentAsync(page, notion);
 
                     //パスを生成する。
