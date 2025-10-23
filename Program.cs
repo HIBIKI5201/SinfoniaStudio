@@ -9,7 +9,7 @@ namespace SinfoniaStudio.Master
         private const string DISCORD_WEBHOOK = "DISCORD_WEBHOOK";
         private const string NOTION_TOKEN = "NOTION_TOKEN";
         private const string NOTION_DATABASE_ID = "NOTION_DATABASE_ID";
-        private const string NOTION_DATABASE_DATE_PROPERTY = "NOTION_DATABASE_DATE_PROPARTY";
+        private const string NOTION_DATABASE_DATE_PROPERTY = "NOTION_DATABASE_DATE_PROPERTY";
 
         static async Task Main()
         {
