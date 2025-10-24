@@ -2,7 +2,7 @@ name: Notion Discord Bot
 
 on:
   schedule:
-    - cron: '0 09 * * *'  # JSTの9時
+    - cron: '0 15 * * *'  # JSTの0時（UTC 15時）
   workflow_dispatch:       # 手動実行も可能
 
 jobs:
