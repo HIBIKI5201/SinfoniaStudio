@@ -79,7 +79,8 @@ namespace SinfoniaStudio.Master
                 if (page.Properties.TryGetValue(datePropertyName, out var datePropertyValue) &&
                     datePropertyValue is DatePropertyValue dateProperty)
                 {
-                                        DateTimeOffset? startOffset = dateProperty.Date?.Start;
+                    // 開始日付を取得
+                    DateTimeOffset? startOffset = dateProperty.Date?.Start;
                     DateTime? start = startOffset?.UtcDateTime;
 
                     // JST補正（UTC+9）
@@ -117,6 +118,7 @@ namespace SinfoniaStudio.Master
                 if (page.Properties.TryGetValue(datePropertyName, out var datePropertyValue) &&
                     datePropertyValue is DatePropertyValue dateProperty)
                 {
+                    // 納期日付を取得
                     DateTimeOffset? endOffset = dateProperty.Date?.End;
                     DateTime? end = endOffset?.UtcDateTime;
 
@@ -146,16 +148,16 @@ namespace SinfoniaStudio.Master
                 }
             }
 
-            // 開始タスクと納期タスクをメインのStringBuilderに追加
-            sb.Append(startTasksSb);
-            sb.Append(endTasksSb);
-
             // 開始タスクと納期タスクが一つもない場合は通知を送信しない
             if (startTaskCount == 0 && endTaskCount == 0)
             {
                 Console.WriteLine("今日の開始タスクと納期タスクがありません。通知を送信しません。");
                 return;
             }
+
+            // 開始タスクと納期タスクをメインのStringBuilderに追加
+            sb.Append(startTasksSb);
+            sb.Append(endTasksSb);
 
             // --- Discordへ送信 ---
             using var client = new HttpClient();
