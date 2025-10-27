@@ -61,6 +61,10 @@ namespace SinfoniaStudio.Master
             DateTime today = nowTime.Date;
 
             StringBuilder sb = new StringBuilder($"GitHub Actionsからのテスト通知です！ {nowTime:yyyy/MM/dd HH:mm:ss}");
+            
+            // 開始タスクと納期タスクの数を追跡
+            int startTaskCount = 0;
+            int endTaskCount = 0;
 
             // --- 各ページを走査 ---
             foreach (var item in database)
@@ -98,12 +102,14 @@ namespace SinfoniaStudio.Master
                     if (start.HasValue && start.Value.Date == today)
                     {
                         sb.AppendLine($"\n🟢 開始タスク: {pageName}");
+                        startTaskCount++;
                         isToday = true;
                     }
 
                     if (end.HasValue && end.Value.Date == today)
                     {
                         sb.AppendLine($"\n🔴 納期タスク: {pageName}");
+                        endTaskCount++;
                         isToday = true;
                     }
 
@@ -116,6 +122,13 @@ namespace SinfoniaStudio.Master
                     sb.AppendLine(new string('-', 10));
                     sb.AppendLine();
                 }
+            }
+
+            // 開始タスクと納期タスクが一つもない場合は通知を送信しない
+            if (startTaskCount == 0 && endTaskCount == 0)
+            {
+                Console.WriteLine("今日の開始タスクと納期タスクがありません。通知を送信しません。");
+                return;
             }
 
             // --- Discordへ送信 ---
