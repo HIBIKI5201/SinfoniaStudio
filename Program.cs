@@ -66,7 +66,11 @@ namespace SinfoniaStudio.Master
             int startTaskCount = 0;
             int endTaskCount = 0;
 
-            // --- 各ページを走査 ---
+            // 開始タスク用と納期タスク用のStringBuilderを分離
+            StringBuilder startTasksSb = new();
+            StringBuilder endTasksSb = new();
+
+            // 各ページを走査（開始タスク）
             foreach (var item in database)
             {
                 if (item is not Page page) continue;
@@ -75,18 +79,51 @@ namespace SinfoniaStudio.Master
                 if (page.Properties.TryGetValue(datePropertyName, out var datePropertyValue) &&
                     datePropertyValue is DatePropertyValue dateProperty)
                 {
-                    DateTimeOffset? startOffset = dateProperty.Date?.Start;
-                    DateTimeOffset? endOffset = dateProperty.Date?.End;
-
+                                        DateTimeOffset? startOffset = dateProperty.Date?.Start;
                     DateTime? start = startOffset?.UtcDateTime;
-                    DateTime? end = endOffset?.UtcDateTime;
 
                     // JST補正（UTC+9）
                     if (start.HasValue) start = start.Value.AddHours(9);
-                    if (end.HasValue) end = end.Value.AddHours(9);
 
                     // JST補正（NotionはUTC基準）
                     if (start.HasValue) start = start.Value.ToUniversalTime().AddHours(9);
+
+                    // ページタイトルを取得
+                    string pageName = "(名称未設定)";
+                    if (page.Properties.TryGetValue("名前", out var titlePropValue) &&
+                        titlePropValue is TitlePropertyValue titleProperty)
+                    {
+                        pageName = string.Join("", titleProperty.Title.Select(t => t.PlainText));
+                    }
+
+                    // 開始タスクが今日の場合
+                    if (start.HasValue && start.Value.Date == today)
+                    {
+                        startTasksSb.AppendLine($"\n🟢 開始タスク: {pageName}");
+                        startTaskCount++;
+
+                        // ページ本文を追加
+                        await AppendPageContentAsync(startTasksSb, page, notion);
+                    }
+                }
+            }
+
+            // --- 各ページを走査（納期タスク） ---
+            foreach (var item in database)
+            {
+                if (item is not Page page) continue;
+
+                // 日付プロパティ取得
+                if (page.Properties.TryGetValue(datePropertyName, out var datePropertyValue) &&
+                    datePropertyValue is DatePropertyValue dateProperty)
+                {
+                    DateTimeOffset? endOffset = dateProperty.Date?.End;
+                    DateTime? end = endOffset?.UtcDateTime;
+
+                    // JST補正（UTC+9）
+                    if (end.HasValue) end = end.Value.AddHours(9);
+
+                    // JST補正（NotionはUTC基準）
                     if (end.HasValue) end = end.Value.ToUniversalTime().AddHours(9);
 
                     // ページタイトルを取得
@@ -97,32 +134,21 @@ namespace SinfoniaStudio.Master
                         pageName = string.Join("", titleProperty.Title.Select(t => t.PlainText));
                     }
 
-                    // --- 🔥 条件：start または end が今日と一致した場合 ---
-                    bool isToday = false;
-                    if (start.HasValue && start.Value.Date == today)
-                    {
-                        sb.AppendLine($"\n🟢 開始タスク: {pageName}");
-                        startTaskCount++;
-                        isToday = true;
-                    }
-
+                    // 納期タスクが今日の場合
                     if (end.HasValue && end.Value.Date == today)
                     {
-                        sb.AppendLine($"\n🔴 納期タスク: {pageName}");
+                        endTasksSb.AppendLine($"\n🔴 納期タスク: {pageName}");
                         endTaskCount++;
-                        isToday = true;
+
+                        // ページ本文を追加
+                        await AppendPageContentAsync(endTasksSb, page, notion);
                     }
-
-                    if (!isToday) continue;
-
-                    // ページ本文を取得
-                    string pageContext = await GetAllContentAsync(page, notion);
-                    sb.AppendLine(new string('-', 10));
-                    sb.AppendLine(pageContext);
-                    sb.AppendLine(new string('-', 10));
-                    sb.AppendLine();
                 }
             }
+
+            // 開始タスクと納期タスクをメインのStringBuilderに追加
+            sb.Append(startTasksSb);
+            sb.Append(endTasksSb);
 
             // 開始タスクと納期タスクが一つもない場合は通知を送信しない
             if (startTaskCount == 0 && endTaskCount == 0)
@@ -146,6 +172,18 @@ namespace SinfoniaStudio.Master
             );
 
             Console.WriteLine($"Discord送信結果: {response.StatusCode}");
+        }
+
+        /// <summary>
+        /// ページ本文をStringBuilderに追加する
+        /// </summary>
+        private static async Task AppendPageContentAsync(StringBuilder sb, Page page, NotionClient notion)
+        {
+            string pageContext = await GetAllContentAsync(page, notion);
+            sb.AppendLine(new string('-', 10));
+            sb.AppendLine(pageContext);
+            sb.AppendLine(new string('-', 10));
+            sb.AppendLine();
         }
 
         /// <summary>
